@@ -3,10 +3,8 @@ let messagesDiv = document.getElementById('messages');
 let newMessageForm = document.getElementById('new-message');
 let newRoomForm = document.getElementById('new-room');
 let statusDiv = document.getElementById('status');
-
 let roomTemplate = document.getElementById('room');
 let messageTemplate = document.getElementById('message');
-
 let messageField = newMessageForm.querySelector("#message");
 let usernameField = newMessageForm.querySelector("#username");
 let roomNameField = newRoomForm.querySelector("#name");
@@ -17,7 +15,6 @@ var STATE = {
   connected: false,
 }
 
-// Generate a color from a "hash" of a string. Thanks, internet.
 function hashColor(str) {
   let hash = 0;
   for (var i = 0; i < str.length; i++) {
@@ -28,8 +25,7 @@ function hashColor(str) {
   return `hsl(${hash % 360}, 100%, 70%)`;
 }
 
-// Add a new room `name` and change to it. Returns `true` if the room didn't
-// already exist and false otherwise.
+// Function adds new room
 function addRoom(name) {
   if (STATE[name]) {
     changeRoom(name);
@@ -67,8 +63,7 @@ function changeRoom(name) {
   STATE[name].forEach((data) => addMessage(name, data.username, data.message))
 }
 
-// Add `message` from `username` to `room`. If `push`, then actually store the
-// message. If the current room is `room`, render the message.
+// Add `message` from user to the chat room
 function addMessage(room, username, message, push = false) {
   if (push) {
     STATE[room].push({ username, message })
@@ -83,13 +78,12 @@ function addMessage(room, username, message, push = false) {
   }
 }
 
-// Subscribe to the event source at `uri` with exponential backoff reconnect.
+// Subscribe to the event source at uri with exponential backoff reconnect.
 function subscribe(uri) {
   var retryTime = 1;
 
   function connect(uri) {
     const events = new EventSource(uri);
-
     events.addEventListener("message", (ev) => {
       console.log("raw data", JSON.stringify(ev.data));
       console.log("decoded data", JSON.stringify(JSON.parse(ev.data)));
@@ -97,41 +91,36 @@ function subscribe(uri) {
       if (!"message" in msg || !"room" in msg || !"username" in msg) return;
       addMessage(msg.room, msg.username, msg.message, true);
     });
-
     events.addEventListener("open", () => {
       setConnectedStatus(true);
       console.log(`connected to event stream at ${uri}`);
       retryTime = 1;
     });
-
     events.addEventListener("error", () => {
       setConnectedStatus(false);
       events.close();
-
       let timeout = retryTime;
       retryTime = Math.min(64, retryTime * 2);
       console.log(`connection lost. attempting to reconnect in ${timeout}s`);
       setTimeout(() => connect(uri), (() => timeout * 1000)());
     });
   }
-
   connect(uri);
 }
 
-// Set the connection status: `true` for connected, `false` for disconnected.
+// Set the connection status: true while connected connected
 function setConnectedStatus(status) {
   STATE.connected = status;
   statusDiv.className = (status) ? "connected" : "reconnecting";
 }
 
-// Let's go! Initialize the world.
 function init() {
-  // Initialize some rooms.
-  addRoom("lobby");
-  addRoom("rocket");
+  // Initialize chat room
+  addRoom("Room 1");
+  addRoom("Room 2");
   changeRoom("lobby");
-  addMessage("lobby", "Rocket", "Hey! Open another browser tab, send a message.", true);
-  addMessage("rocket", "Rocket", "This is another room. Neat, huh?", true);
+  addMessage("Room 1",  " Open another browser tab to communicate in chat room.", true);
+  addMessage("Room 2",  "This is another room. Neat, huh?", true);
 
   // Set up the form handler.
   newMessageForm.addEventListener("submit", (e) => {
@@ -162,7 +151,7 @@ function init() {
     roomNameField.value = "";
     if (!addRoom(room)) return;
 
-    addMessage(room, "Rocket", `Look, your own "${room}" room! Nice.`, true);
+    addMessage(room, "Room 2", `Welcome  "${room}" `, true);
   })
 
   // Subscribe to server-sent events.
