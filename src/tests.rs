@@ -40,7 +40,7 @@ async fn messages() {
         message: "shutdown".into(),
     };
 
-    // Generate somewhere between 75 and 100 messages.
+
     let mut test_messages = vec![];
     for _ in 0..thread_rng().gen_range(75..100) {
         test_messages.push(Message {
@@ -59,14 +59,14 @@ async fn messages() {
             send_message(&client, message).await;
         }
 
-        // Send the special "shutdown" message.
+
         send_message(&client, &shutdown_message).await;
     };
 
     let receive_messages = async {
         let response = client.get(uri!(events)).dispatch().await;
 
-        // We have the response stream. Let the receiver know to start sending.
+
         start_barrier.wait().await;
 
         let mut messages = vec![];
@@ -78,7 +78,7 @@ async fn messages() {
 
             let data: Message = json::from_str(&line[5..]).expect("message JSON");
             if &data == &shutdown_message {
-                // Test shutdown listening: this should end the stream.
+                // Test shutdown listening
                 client.rocket().shutdown().notify();
                 continue;
             }
@@ -96,7 +96,7 @@ async fn messages() {
 
 #[async_test]
 async fn bad_messages() {
-    // Generate a bunch of bad messages.
+
     let mut bad_messages = vec![];
     for _ in 0..thread_rng().gen_range(75..100) {
         bad_messages.push(Message {
@@ -106,7 +106,7 @@ async fn bad_messages() {
         });
     }
 
-    // Ensure they all result in a rejected request.
+
     let client = Client::tracked(rocket()).await.unwrap();
     for message in &bad_messages {
         let response = send_message(&client, message).await;
